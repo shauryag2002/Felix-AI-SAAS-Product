@@ -12,6 +12,7 @@ import downloadImg from '~/app/_utils/DownloadImg';
 import Loading from '~/app/_components/Loading';
 import { RouterOutputs } from '~/trpc/shared';
 import { useRouter } from 'next/navigation';
+import { saveImage } from "~/app/_utils/saveImage"
 const Page = () => {
     type ConversationType = RouterOutputs["user"]["page"]
     const [imgSrc, setImgSrc] = useState('');
@@ -41,7 +42,7 @@ const Page = () => {
             console.log(error)
         }
     })
-    const handleClick = () => {
+    const handleClick = async () => {
         setLoading(true)
         if (prompt === '') return;
         if (imgSrc === '') return;
@@ -49,7 +50,8 @@ const Page = () => {
             setUpgradeModal(true)
             return;
         }
-        mutate({ prompt, imgsrc: imgSrc, userId: session?.user?.id ?? "" })
+        const result = await saveImage(imgSrc)
+        mutate({ prompt, imgsrc: result ?? "", userId: session?.user?.id ?? "" })
         setPrompt('')
         setImgSrc('')
     }
@@ -115,7 +117,7 @@ const Page = () => {
                         </span>
 
                         <div className=" m-4 ">
-                            <Image alt={chat.prompt} height={100} width={100} className='py-2' src={chat?.Images[0]?.urls ?? ""} />
+                            <Image alt={chat.prompt} height={100} width={100} className='py-2' src={chat?.urls ?? ""} />
                         </div>
                     </div>
                     <div className="images flex flex-col w-[300px] my-5 max-w-[1024px] items-center m-auto">
@@ -148,12 +150,12 @@ const Page = () => {
                 </div>
                 <input className='text-center hidden' type="file" name="prompt-img" id="prompt-img" onChange={(e) => readURL(e.target as HTMLInputElement)} />
                 <div className="input flex sm:flex-row flex-col justify-between  ">
-                    <input type='text' value={prompt} placeholder="Talk to AI Powered chat" className="w-full h-[40px] bg-transparent text-white placeholder-white outline-none border-grey border-2" onKeyDown={(e) => {
+                    <input type='text' value={prompt} placeholder="Talk to AI Powered chat" className="w-full h-[40px] bg-transparent text-white placeholder-white outline-none border-grey border-2" onKeyDown={async (e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
 
-                            handleClick();
-                            e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true }));
+                            await handleClick();
+                            // e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true }));
                         }
 
                     }} onChange={(e) => setPrompt(e.target.value)} />

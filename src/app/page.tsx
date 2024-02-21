@@ -51,7 +51,7 @@ export default async function Home() {
         </div>
         <div className="py-4 border-b-2 border-b-sky-50">
           <h1 className="text-5xl my-2 text-center text-secondary">How to use Felix:- </h1>
-          <video src="/Felix_Demo_video.mp4" controls className="w-[80%] m-auto relative -z-[1]" />
+          <video src="/Felix_Demo_video.mp4" controls className="w-[80%] m-auto " />
         </div>
         <div className="pricing py-4 border-b-2 border-b-sky-50" id="pricing">
           <h1 className="text-5xl text-center text-secondary my-2 ">Our Pricings</h1>

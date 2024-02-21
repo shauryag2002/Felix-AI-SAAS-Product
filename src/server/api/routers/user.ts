@@ -51,11 +51,10 @@ export const userRouter = createTRPCRouter({
                         name: pageRoute
                     },
                     select: {
-                        Images: true,
                         answer: true,
                         prompt: true,
                         name: true,
-
+                        urls: true,
                     },
                     orderBy: {
                         createdAt: 'asc'

@@ -65,17 +65,7 @@ model AI {
     updatedAt DateTime @updatedAt
     user      User     @relation(fields: [userId], references: [id])
     userId    String
-
-    Images Image[]
-}
-
-model Image {
-    id        Int      @id @default(autoincrement())
-    urls      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    aI        AI       @relation(fields: [aiId], references: [id])
-    aiId      Int
+    urls      String?
 }
 
 model Order {
