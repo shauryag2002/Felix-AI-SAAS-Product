@@ -34,7 +34,6 @@ export async function POST(req: Request) {
                     }
                 }
             ).then(async (prediction) => {
-                console.log(prediction)
                 const me: User | null = await db.user.findFirst({
                     where: {
                         id: request.userId

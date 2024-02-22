@@ -82,7 +82,7 @@ const Page = () => {
             return;
         }
         const downloadImage = async (url1: string) => {
-            const url_final: string | void = await removeBG(url1 ?? '')
+            const url_final: string | void = await removeBG(url1 ?? '') ?? ""
             await downloadImg(url_final ?? "")
         }
 
