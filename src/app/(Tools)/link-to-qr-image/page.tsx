@@ -47,7 +47,15 @@ const Page = () => {
         });
 
     }, [chats, loading])
-    const handleClick = (e: undefined | React.KeyboardEvent<HTMLTextAreaElement> | React.FormEvent<HTMLFormElement>) => {
+    useEffect(() => {
+        if (innterval) {
+            clearInterval(innterval)
+        }
+    }, [chats])
+
+    const [innterval, setInnterval] = useState<NodeJS.Timeout | undefined>(undefined)
+    const [clickInterval, setClickInterval] = useState<boolean>(false)
+    const handleClick = async (e: undefined | React.KeyboardEvent<HTMLTextAreaElement> | React.FormEvent<HTMLFormElement>) => {
         if (e) {
 
             e?.preventDefault();
@@ -61,11 +69,63 @@ const Page = () => {
             setUpgradeModal(true)
             return;
         }
-        mutate({ prompt, link, userId: session?.user?.id ? session?.user?.id : "" });
         setPrompt('')
         setLink('')
         setLoading(true)
+        const newChat = await fetch("/api/linkToQR", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ prompt, link, userId: session?.user?.id ? session?.user?.id : "" }),
+        })
+        await countRefetch();
+        setClickInterval(true)
     };
+
+    useEffect(() => {
+        if (clickInterval) {
+            let inter: NodeJS.Timeout | undefined = undefined;
+
+            const interval = async () => {
+                try {
+                    await refetch();
+                    if (chatsQuery?.length !== chats.length) {
+                        clearInterval(inter);
+                        setLoading(false);
+                        setClickInterval(false);
+                        return;
+                    }
+
+                    await countRefetch();
+                    if (countQuery?.count !== count) {
+                        clearInterval(inter);
+                        setLoading(false);
+                        setClickInterval(false);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error in interval:', error);
+                }
+                return undefined;
+            };
+
+            const intervalWrapper = () => {
+                interval().then((res) => {
+                    if (res) {
+                        clearInterval(inter);
+                    }
+                }
+                ).catch((err) => {
+                    console.error('Error in intervalWrapper:', err);
+                });
+            };
+
+            inter = setInterval(intervalWrapper, 1000);
+            setInnterval(inter);
+            return () => clearInterval(inter);
+        }
+    }, [clickInterval]);
     function formatChatGPTResponse(response: string) {
         const text = response;
 
@@ -96,26 +156,25 @@ const Page = () => {
 
 
             <div className='h-[150px]' ></div>
-            <form className="input flex-col justify-between mx-[10px] fixed bottom-[0px] w-full max-w-[1024px] px-2 bg-slate-400 py-[10px]" onSubmit={(e: React.FormEvent<HTMLFormElement>) => handleClick(e)} >
+            <form className="input flex-col justify-between mx-[10px] fixed bottom-[0px] w-full max-w-[1024px] px-2 bg-slate-400 py-[10px]" onSubmit={async (e: React.FormEvent<HTMLFormElement>) => await handleClick(e)} >
                 <div className=' flex w-full bg-transparent text-white placeholder-white outline-none border-grey border-2'>
                     <span>Link:-</span>
                     <input className='w-full bg-transparent text-white placeholder-white outline-none border-grey border-2' placeholder='Enter Link here' type="text" value={link} onChange={(e) => setLink(e.target.value)} />
                 </div>
                 <div className="flex">
 
-                    <textarea name='prompt' value={prompt} rows={2} placeholder="Talk to AI Powered chat" className="w-full bg-transparent text-white placeholder-white outline-none border-grey border-2" onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                    <textarea name='prompt' value={prompt} rows={2} placeholder="Talk to AI Powered chat" className="w-full bg-transparent text-white placeholder-white outline-none border-grey border-2" onKeyDown={async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
 
-                            handleClick(e);
-                            e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true }));
+                            await handleClick(e);
                         }
 
                     }} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                         const input = e.target.value;
                         setPrompt(input);
                     }} />
-                    <button type='submit' className=" bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded " onClick={() => handleClick(undefined)}>Generate</button>
+                    <button type='submit' className=" bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded " onClick={async () => await handleClick(undefined)}>Generate</button>
                 </div>
             </form>
         </div>

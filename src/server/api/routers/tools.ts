@@ -74,7 +74,6 @@ export const toolsRouter = createTRPCRouter({
                     prompt: prompt + " img",
                     num_steps: 50,
                     style_name: "Photographic (Default)",
-                    // input_image: result.url,
                     input_image: imgsrc,
                     num_outputs: 1,
                     guidance_scale: 5,

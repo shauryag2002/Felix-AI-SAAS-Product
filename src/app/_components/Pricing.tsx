@@ -29,9 +29,6 @@ interface RazorpayOptions {
         ondismiss?: () => void;
     };
 }
-
-// new (options: RazorpayOptions): {
-//};
 interface Razorpay {
     open: () => void;
     on: (event: string, handler: () => void) => void;
@@ -78,7 +75,6 @@ const Pricing = ({ className }: PricingProps) => {
                 }
             };
 
-            //const razorpayConstructor = window.Razorpay as RazorpayConstructor;
             const razorpayConstructor: RazorpayConstructor = window.Razorpay;
             //@ts-expect-error This is necessary to suppress the TypeScript error.
 

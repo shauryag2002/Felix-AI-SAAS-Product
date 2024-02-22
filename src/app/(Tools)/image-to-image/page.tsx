@@ -30,6 +30,8 @@ const Page = () => {
     const [conversations, setConversations] = useState<ConversationType>([])
     const { data: countQuery, refetch: countRefetch } = api.user.getCount.useQuery({ userId: session?.user?.id ?? "" })
     const limit = useRecoilValue<number>(limitAtom);
+    const [innterval, setInnterval] = useState<NodeJS.Timeout | undefined>(undefined)
+    const [clickInterval, setClickInterval] = useState<boolean>(false)
     const { mutate } = api.tools.imageToImage.useMutation({
         onSuccess: async (data) => {
             setLoading(false)
@@ -43,21 +45,33 @@ const Page = () => {
         }
     })
     const handleClick = async () => {
-        setLoading(true)
         if (prompt === '') return;
         if (imgSrc === '') return;
         if (count >= limit) {
             setUpgradeModal(true)
             return;
         }
-        const result = await saveImage(imgSrc)
-        mutate({ prompt, imgsrc: result ?? "", userId: session?.user?.id ?? "" })
+        setLoading(true)
         setPrompt('')
         setImgSrc('')
+        const result = await saveImage(imgSrc)
+        const newChat = await fetch("/api/imageToImage", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ prompt, userId: session?.user?.id ? session?.user?.id : "", imgsrc: result ?? "" }),
+        })
+        await countRefetch();
+        setClickInterval(true)
     }
     useEffect(() => {
+        if (innterval) {
+            clearInterval(innterval)
+        }
         if (allQuery) setConversations(allQuery);
         setCount(countQuery?.count ?? 0);
+        setLoading(false);
     }, [allQuery]);
     useEffect(() => {
         window.scrollTo({
@@ -105,6 +119,51 @@ const Page = () => {
 
         await downloadImage(url);
     }
+    useEffect(() => {
+        if (clickInterval) {
+            let inter: NodeJS.Timeout | undefined = undefined;
+
+            const interval = async () => {
+                try {
+                    await refetch();
+                    if (allQuery?.length !== conversations.length) {
+                        clearInterval(inter);
+                        clearInterval(innterval);
+                        setLoading(false);
+                        setClickInterval(false);
+                        return;
+                    }
+
+                    await countRefetch();
+                    if (countQuery?.count !== count) {
+                        clearInterval(inter);
+                        clearInterval(innterval);
+                        setLoading(false);
+                        setClickInterval(false);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error in interval:', error);
+                }
+                return undefined;
+            };
+
+            const intervalWrapper = () => {
+                interval().then((res) => {
+                    if (res) {
+                        clearInterval(inter);
+                    }
+                }
+                ).catch((err) => {
+                    console.error('Error in intervalWrapper:', err);
+                });
+            };
+
+            inter = setInterval(intervalWrapper, 1000);
+            setInnterval(inter);
+            return () => clearInterval(inter);
+        }
+    }, [clickInterval]);
     if (status === "loading") return <div className='h-screen w-screen'><Loading /></div>
     return (
         <div id='chats' className="flex-col items-center justify-center max-w-[1024px] m-auto">
@@ -155,7 +214,6 @@ const Page = () => {
                             e.preventDefault();
 
                             await handleClick();
-                            // e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true }));
                         }
 
                     }} onChange={(e) => setPrompt(e.target.value)} />
